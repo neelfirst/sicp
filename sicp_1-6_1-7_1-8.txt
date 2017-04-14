@@ -1,0 +1,88 @@
+ex 1.6
+
+OG sqrt program
+--------
+(define (sqrt x) (sqrt-iter 1.0 x))
+
+(define (sqrt-iter guess x)
+	(if (good-enough guess x)
+		guess
+		(sqrt-iter (improve guess x) x)))
+
+(define (improve guess x)
+	(average guess (/ x guess)))
+
+(define (average x y)
+	(/ (+ x y) 2))
+
+(define (good-enough guess x)
+	(< (abs (- (square guess) x)) 0.001))
+
+(define (square x) (* x x))
+
+(define (abs x) (if (< x 0) (- x) x))
+---------
+new-if sqrt program (ignore effect on abs)
+
+(define (new-sqrt-iter guess x)
+	(new-if (good-enough guess x)
+		guess
+		(sqrt-iter (improve guess x) x)))
+
+let's start by substituting in new-if
+
+(define (new-if pred then-clause else-clause)
+	(cond (pred then-clause)
+		(else else-clause)))
+
+into the sqrt-iter program (new-sqrt-iter)
+
+(define (new-sqrt-iter guess x)
+	(cond ((good-enough guess x) guess)
+		(else (new-sqrt-iter (improve guess x) x))))
+
+According to the footnote #19, "a minor difference between if and cond is that the <e> part of each cond clause may be a sequence of expressions. If the corresponding <p> is found to be true, the expressions <e> are evaluated in sequence and the value of the final expression in the sequence is returned as the value of the cond. In an if expression, however, the <consequent> and <alternative> must be single expressions."
+
+As written, "new-if" is a normal function that must evaluate all of its arguments prior to running (applicative-order evaluation). So once a guess is not "good-enough", the else clause forces an evaluation of "sqrt-iter (improve guess x) x", which forces another evaluation of sqrt-iter... and so on into an infinite loop.
+
+Meanwhile, "if" is a special conditional that takes the <alternative> as a single expression, rather than an argument to a larger function "new-if". So "new-sqrt-iter" is run as the function, and "improve guess x" is evaluated as an argument via applicative-order before new-sqrt-iter is run. Evaluating "improve guess x" before "new-sqrt-iter" allows the recursion to terminate at some point.
+
+Ex 1.7
+
+We can see the good-enough test will fail for very small and very large numbers. On the small end, if a number differs from the initial guess by less than 0.001, then good-enough will terminate with the same number itself. This is not the result we seek, even though it meets our good-enough target.
+
+Moreover if x < 1, then sqrt(x) > x. This means for numbers < sqrt(0.001) our program will never terminate, as our 
+
+For large numbers, division occurs with finite precision. We can see with examples such as 100000.0/9.0 that the last decimal places differ from what is mathematically true. As the numbers get larger, 
+
+(define (new2-sqrt-iter guess old-guess x)
+	(if (new-good-enough guess old-guess)
+		guess
+		(new2-sqrt-iter (improve guess x) guess x)))
+
+(define (new-good-enough guess new-guess)
+	(< (/ (abs (- guess new-guess)) guess) 0.001))
+
+We can observe for our test cases x = 0.001, x = 1.001, x = 1000000 the answers converge better. *
+
+Ex 1.8
+
+(define (cubert x) (cubert-iter 1.0 x))
+
+(define (cubert-iter guess x)
+	(if (good-enough guess x)
+		guess
+		(cubert-iter (cubert-improve guess x) x)))
+
+(define (cubert-improve guess x)
+	(/ (+ (/ x (square guess)) (+ guess guess)) 3)
+
+(define (good-enough guess x)
+	(< (abs (- (cube guess) x)) 0.001))
+
+(define (cube x) (* (square x) x))
+(define (square x) (* x x))
+
+(define (abs x) (if (< x 0) (- x) x))
+
+Test: 8, 27, 1000, -8, -27, -1000
