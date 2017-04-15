@@ -7,12 +7,12 @@
 
 
 (define (f-iter n)
-  (f 0 1 2 n))
+  (f-xiter 0 1 2 n))
 
-(define (f a b c n)
+(define (f-xiter a b c n)
   (if (< n 3)
        c
-       (f b c (+ c (* 2 b) (* 3 a)))
+       (f-xiter b c (+ c (* 2 b) (* 3 a)) (- n 1))
   )
 )
 
